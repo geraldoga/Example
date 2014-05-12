@@ -1,88 +1,121 @@
 function love.load()
-	love.graphics.setBackgroundColor( 255, 255, 255 )
-	xTarget = 0
-	xTank = 0
-	xMan = 800
-	xZepp = 0
+
 	
-	imageTarget = love.graphics.newImage("textures/wla man.png")
-	imageGround = love.graphics.newImage( "textures/ground.png" )
-	imageEnemy_1 = love.graphics.newImage( "textures/enemy1.png" )
-	imageEnemy_2 = love.graphics.newImage( "textures/enemy2.png" )
-	imageAim = love.graphics.newImage( "textures/aim.png" )
-	imageTank = love.graphics.newImage( "textures/tank.png" )
-	imageZepp = love.graphics.newImage( "textures/zepp.png" )
+	-- setting a reference to the following libraries
+	-- see the ENTITY file for further explanation
+	G = love.graphics
+	M = love.mouse
+	W = love.window
+
+	-- importing the entities
+	-- import the ENTITY first, since it is the base
+	-- or it would not work because you are calling
+	-- that is not initialized first
+	require 'entity'
+	require 'Entities/target'
+	require 'Entities/man'
+	require 'Entities/tank'
+	require 'Entities/zepp'
+
+	-- importing the player
+	require 'player'
+
+	-- WHY NO .LUA?
+	-- Because when you add .lua, it will find from the system directory
+	-- not relative to your directory
+
+	G.setBackgroundColor( 255, 255, 255, 255 )
 	
-	
+	imageGround = G.newImage( "textures/ground.png" )
+
+	-- creating an instance
+	enemy1 = Target:new()
+	enemy2 = Man:new()
+	enemy3 = Tank:new()
+	enemy4 = Zepp:new()
+
+	player = Player:new()
+
+	ENEMIES = {}
+
+	-- adding all enemies to the ENEMIES table
+	-- for simple coding
+	table.insert(ENEMIES, enemy1)
+	table.insert(ENEMIES, enemy2)
+	table.insert(ENEMIES, enemy3)
+	table.insert(ENEMIES, enemy4)
+
 end
 
 function love.draw()
-	local x = love.mouse.getX( )
-	local y = love.mouse.getY( )
 	
-	love.graphics.setColor( 198, 241, 255, 255 )
-	love.graphics.rectangle( "fill", 0, 0, 800, 300 )
+	G.setColor( 198, 241, 255, 255 )
+	G.rectangle( "fill", 0, 0, 800, 300 )
 	
-	love.graphics.setColor( 255, 255, 255, 255 )
-	love.graphics.draw( imageTarget, xTarget - 256, 128, 0, 1, 1, 0, 0 )
+	G.setColor( 103, 164, 21, 255 )
+	G.rectangle( "fill", 0, 300, 800, 300 )
 	
-	love.graphics.setColor( 103, 164, 21, 255 )
-	love.graphics.rectangle( "fill", 0, 300, 800, 300 )
-	
-	love.graphics.setColor( 255, 255, 255, 255 )
-	love.graphics.draw( imageGround, (800-1024)/2, 310-64, 0, 1, 1, 0, 0 )
-	
-	love.graphics.setColor( 255, 255, 255, 255 )
-	love.graphics.draw( imageTank, xTank - 128, 310, 0, 1, 1, 0, 0 )
-	
-	love.graphics.setColor( 255, 255, 255, 255 )
-	love.graphics.draw( imageZepp, xZepp - 128, 0, 0, 1, 1, 0, 0 )
-	
-	love.graphics.setColor( 255, 255, 255, 255 )
-	love.graphics.draw( imageEnemy_2, xMan, 240, 0, .3, .3, 0, 0 )
-	
-	love.graphics.setColor( 255, 255, 255, 255 )
-	love.graphics.draw( imageAim, x-16, y-16, 0, 1, 1, 0, 0 )
+	-- please add comment if you want hard coded
+	-- centering the grounds' x
+	-- decreasing current y position to its width
+	G.setColor( 255, 255, 255, 255 )
+	G.draw( imageGround, (800-1024)/2, 310-64, 0, 1, 1, 0, 0 )
+
+	-- what this does is like ID system
+	-- you have i as the ID number
+	-- and v as you.
+	for i, v in ipairs(ENEMIES) do v:draw() end
+
+	player:draw()
+
+	G.print("CHECK: " .. toString(isFiring), 0, 0)
+
 end
 
 function love.update(dt)
-	xTarget = xTarget + 128*dt
-	if xTarget >= (800 + 256) then
-		xTarget = 0
+
+	for i, v in ipairs(ENEMIES) do 
+		v:update(dt)
+		-- if health is 0
+		-- remove from the table
+		-- destroy throw it to the garbage collector
+		-- garbage collector will take care of you
+		if v.health <= 0 then
+			table.remove(ENEMIES, i)
+			v = nil
+		end
 	end
-	
-	xTank = xTank + 64*dt
-	if xTank >= (800 + 156) then
-		xTank = 0
+
+	if player.isFiring then
+		for i, v in ipairs(ENEMIES) do
+			check = v.isInRectangle(v, player)
+			if check then v.health = v.health - 1 end
+		end
 	end
-	
-	xMan = xMan - 32*dt
-	if xMan >= (800 + 156) then
-		xMan = 800
-	end
-	
-	xZepp = xZepp + 172*dt
-	if xZepp >= (800 + 256) then
-		xZepp = 0
-	end
+
+	player:update(dt)
+
+end
+
+function love.mousereleased(x, y, button)
+
+	-- if button left is pressed. 
+	-- set player is firing to true :D
+	if button == "l" then player.isFiring = true end
 
 end
 
 function love.focus(bool)
-end
 
-function love.keypressed( key, unicode )
-end
-
-function love.keyreleased( key, unicode )
-	
-end
-
-function love.mousepressed( x, y, button )
-end
-
-function love.mousereleased( x, y, button )
 end
 
 function love.quit()
+
+end
+
+function toString(bool)
+	
+	if bool then return "YES" end
+	return "NO"
+
 end
